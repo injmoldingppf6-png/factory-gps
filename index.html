@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+
+  <title>Factory GPS Verification</title>
+
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      text-align: center;
+      padding: 30px 15px;
+    }
+
+    .box {
+      max-width: 450px;
+      margin: 50px auto;
+      padding: 30px 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px #ccc;
+    }
+
+    h2 {
+      color: #1976d2;
+    }
+
+    #status {
+      margin-top: 25px;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    button {
+      background: #1976d2;
+      color: white;
+      border: none;
+      padding: 14px 25px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div class="box">
+
+    <h2>Factory Location Verification</h2>
+
+    <p>
+      Production information can only be accessed
+      within the permitted factory area.
+    </p>
+
+    <p id="status">
+      Please verify your factory location.
+    </p>
+
+    <button id="verifyButton" type="button">
+      Verify My Location
+    </button>
+
+  </div>
+
+
+  <script>
+
+    // =================================
+    // GOOGLE APPS SCRIPT WEB APP URL
+    // =================================
+
+    const SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbyNQKn1UOEixrDFwpZtvVCAn8ccC_ekLFcoOXh9VvJ1/exec";
+
+
+    // =================================
+    // GET JOB AND PRODUCT CODE
+    // =================================
+
+    const params =
+      new URLSearchParams(window.location.search);
+
+    const job =
+      params.get("job") || "";
+
+    const code =
+      params.get("code") || "";
+
+
+    // =================================
+    // VERIFY LOCATION
+    // =================================
+
+    document.getElementById("verifyButton")
+      .addEventListener("click", function() {
+
+        const status =
+          document.getElementById("status");
+
+        if (!job || !code) {
+
+          status.innerText =
+            "Invalid QR link. Job number or product code missing.";
+
+          return;
+
+        }
+
+        if (!navigator.geolocation) {
+
+          status.innerText =
+            "GPS is not supported by this browser.";
+
+          return;
+
+        }
+
+        status.innerText =
+          "Requesting GPS permission...";
+
+        navigator.geolocation.getCurrentPosition(
+
+          function(position) {
+
+            status.innerText =
+              "Checking your factory location...";
+
+            const lat =
+              position.coords.latitude;
+
+            const lon =
+              position.coords.longitude;
+
+            const accuracy =
+              position.coords.accuracy;
+
+
+            // =================================
+            // SEND LOCATION TO APPS SCRIPT
+            // =================================
+
+            const finalURL =
+              SCRIPT_URL +
+              "?job=" + encodeURIComponent(job) +
+              "&code=" + encodeURIComponent(code) +
+              "&lat=" + encodeURIComponent(lat) +
+              "&lon=" + encodeURIComponent(lon) +
+              "&accuracy=" + encodeURIComponent(accuracy);
+
+
+            // OPEN APPS SCRIPT
+
+            window.location.href = finalURL;
+
+          },
+
+          function(error) {
+
+            if (error.code === 1) {
+
+              status.innerText =
+                "Location permission denied. Please allow GPS access.";
+
+            } else if (error.code === 2) {
+
+              status.innerText =
+                "Unable to detect your location. Please enable GPS.";
+
+            } else {
+
+              status.innerText =
+                "GPS request timed out. Please try again.";
+
+            }
+
+          },
+
+          {
+
+            enableHighAccuracy: true,
+
+            timeout: 20000,
+
+            maximumAge: 0
+
+          }
+
+        );
+
+      });
+
+  </script>
+
+</body>
+
+</html>
